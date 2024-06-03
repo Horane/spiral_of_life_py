@@ -21,15 +21,16 @@ patches = []
 highlighted_patch = None
 
 # 自定义函数绘制带多种颜色的点
-def draw_multicolor_circle(ax, x, y, colors, radius=0.03):
+def draw_multicolor_circle(ax, x, y, colors, radius=0.03, data=None):
     radius = 0.01 * len(colors)
     wedges = [Wedge((x, y), radius, 360 * i / len(colors), 360 * (i + 1) / len(colors), facecolor=color) for i, color in enumerate(colors)]
     for wedge in wedges:
         ax.add_patch(wedge)
+        wedge.data = data  # 将相关数据存储在每个 wedge 对象中
     return wedges
 
 def highlight_wedges(patch, hover):
-    if(hover):
+    if hover:
         patch.set_edgecolor('red')
         patch.set_linewidth(1)
     else:
@@ -77,12 +78,13 @@ def plot_spiral(start_angle):
         y_pos = radius * np.sin(angle)
         if (x_pos, y_pos) not in points_dict:
             points_dict[(x_pos, y_pos)] = []
-        points_dict[(x_pos, y_pos)].append((family_colors[row['family']], row['model']))
+        points_dict[(x_pos, y_pos)].append((family_colors[row['family']], row))
 
     patches.clear()
     for point, details in points_dict.items():
         colors = [detail[0] for detail in details]
-        wedges = draw_multicolor_circle(ax, point[0], point[1], colors)
+        row_data = [detail[1] for detail in details]
+        wedges = draw_multicolor_circle(ax, point[0], point[1], colors, data=row_data)
         patches.extend(wedges)
 
     for patch in patches:
@@ -106,16 +108,36 @@ def on_hover(event):
                 highlight_wedges(highlighted_patch, False)
             highlight_wedges(patch, True)
             highlighted_patch = patch
+            # 从 patch 对象中获取存储的数据
+            data_info = highlighted_patch.data
+            tooltip_text = "\n".join([f"{row['family']} - {row['model']}" for row in data_info])
+            show_tooltip(event, tooltip_text)
             break
     else:
         if highlighted_patch is not None:
             highlight_wedges(highlighted_patch, False)
         highlighted_patch = None
+        hide_tooltip(event)
     canvas.draw_idle()
 
 # 创建主窗口
 root = tk.Tk()
 root.title("螺旋线调整器")
+
+# 创建工具提示窗口
+tooltip = tk.Toplevel(root)
+tooltip.withdraw()  # 隐藏工具提示窗口
+tooltip.overrideredirect(True)
+tooltip_label = tk.Label(tooltip, text="", background="white", relief="solid", borderwidth=1, font=("Calibri", 16))
+tooltip_label.pack()
+
+def show_tooltip(event, text):
+    tooltip_label.config(text=text)
+    tooltip.geometry(f"+{event.guiEvent.x_root+20}+{event.guiEvent.y_root-20}")
+    tooltip.deiconify()
+
+def hide_tooltip(event):
+    tooltip.withdraw()
 
 fig, ax = plt.subplots(figsize=(16, 16))
 canvas = FigureCanvasTkAgg(fig, master=root)
