@@ -6,8 +6,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Wedge
 
 # 读取CSV数据
-data = pd.read_csv("filtered.csv")
-data['startDate'] = pd.to_datetime(data['startDate'], format='%d-%b-%y', errors='coerce')
+data = pd.read_csv("apple.csv")
+# data['startDate'] = pd.to_datetime(data['startDate'], format='%d-%b-%y', errors='coerce')
+data['startDate'] = pd.to_datetime(data['startDate'], format="%B %d, %Y", errors='coerce')
+# "%B %d, %Y"
 data = data.dropna(subset=['startDate'])
 
 # 计算年份跨度
@@ -16,13 +18,13 @@ max_date = data['startDate'].max()
 year_span = int(max_date.year - min_date.year + 1)
 
 # 全局变量定义
-total_points = 1000
+total_points = 100000
 patches = []
 highlighted_patch = None
 
 # 自定义函数绘制带多种颜色的点
 def draw_multicolor_circle(ax, x, y, colors, radius=0.03, data=None):
-    radius = 0.01 * len(colors)
+    radius = 0.01 + 0.005 * len(colors)
     wedges = [Wedge((x, y), radius, 360 * i / len(colors), 360 * (i + 1) / len(colors), facecolor=color) for i, color in enumerate(colors)]
     for wedge in wedges:
         ax.add_patch(wedge)
@@ -110,7 +112,7 @@ def on_hover(event):
             highlighted_patch = patch
             # 从 patch 对象中获取存储的数据
             data_info = highlighted_patch.data
-            tooltip_text = "\n".join([f"{row['family']} - {row['model']}" for row in data_info])
+            tooltip_text = data_info[0]['startDate'].strftime("%Y-%m-%d\n") + "\n".join([f"{row['family']} - {row['model']}" for row in data_info])
             show_tooltip(event, tooltip_text)
             break
     else:
@@ -128,7 +130,7 @@ root.title("螺旋线调整器")
 tooltip = tk.Toplevel(root)
 tooltip.withdraw()  # 隐藏工具提示窗口
 tooltip.overrideredirect(True)
-tooltip_label = tk.Label(tooltip, text="", background="white", relief="solid", borderwidth=1, font=("Calibri", 16))
+tooltip_label = tk.Label(tooltip, text="", background="white", relief="solid", borderwidth=1, font=("Calibri", 20))
 tooltip_label.pack()
 
 def show_tooltip(event, text):
@@ -139,7 +141,7 @@ def show_tooltip(event, text):
 def hide_tooltip(event):
     tooltip.withdraw()
 
-fig, ax = plt.subplots(figsize=(16, 16))
+fig, ax = plt.subplots(figsize=(36, 27))
 canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.get_tk_widget().pack()
 
