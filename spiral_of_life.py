@@ -6,9 +6,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Wedge
 
 # 读取CSV数据
-data = pd.read_csv("apple.csv")
+data = pd.read_csv("filtered2.csv")
 # data['startDate'] = pd.to_datetime(data['startDate'], format='%d-%b-%y', errors='coerce')
-data['startDate'] = pd.to_datetime(data['startDate'], format="%B %d, %Y", errors='coerce')
+print(data['startDate'])
+data['startDate'] = pd.to_datetime(data['startDate'], format="%d-%b-%y", errors='coerce')
 # "%B %d, %Y"
 data = data.dropna(subset=['startDate'])
 
@@ -18,7 +19,7 @@ max_date = data['startDate'].max()
 year_span = int(max_date.year - min_date.year + 1)
 
 # 全局变量定义
-total_points = 100000
+total_points = year_span * 366
 patches = []
 highlighted_patch = None
 
@@ -39,10 +40,25 @@ def highlight_wedges(patch, hover):
         patch.set_edgecolor('white')
         patch.set_linewidth(1)
 
+def draw_months_and_seasons(ax, radius_start, radius_end):
+    # Draw 12-segment lines for months
+    for i in range(12):
+        angle = 2 * np.pi * i / 12
+        x = [0, radius_end * np.cos(angle)]
+        y = [0, radius_end * np.sin(angle)]
+        ax.plot(x, y, color='grey', alpha=0.3)
+
+    # Draw 4-segment lines for seasons
+    for i in range(4):
+        angle = 2 * np.pi * i / 4
+        x = [0, radius_end * np.cos(angle)]
+        y = [0, radius_end * np.sin(angle)]
+        ax.plot(x, y, color='grey', alpha=0.7)
+
 # 定义绘制螺旋线的函数
 def plot_spiral(start_angle):
     radius_start = 0.30
-    radius_end = 1
+    radius_end = 2
     global patches
 
     theta = np.linspace(start_angle, -year_span * 2 * np.pi + start_angle, total_points)
@@ -55,10 +71,10 @@ def plot_spiral(start_angle):
 
     for year in range(year_span):
         year_angle = start_angle - year * 2 * np.pi
-        year_radius = radius_start + (radius_end + 0.02 - radius_start) * year / year_span
+        year_radius = radius_start + (radius_end - radius_start) * year / year_span
         year_x = year_radius * np.cos(year_angle)
         year_y = year_radius * np.sin(year_angle)
-        ax.text(year_x, year_y + 0.02, f'{min_date.year + year}', fontsize=10, ha='center', va='top')
+        ax.text(year_x, year_y +0.02, f'{min_date.year + year}', fontsize=10, ha='center', va='top')
 
     families = data['family'].unique()
     colors_map = plt.cm.jet(np.linspace(0, 1, len(families)))
@@ -100,10 +116,20 @@ def plot_spiral(start_angle):
     ax.set_yticks([])
     ax.spines[['top', 'right', 'bottom', 'left']].set_visible(False)
 
+    draw_months_and_seasons(ax, radius_start, radius_end)
     canvas.draw()
 
 def on_hover(event):
     global highlighted_patch
+    # current_family = ""
+    # for patch in patches:
+    #     if patch.contains_point([event.x, event.y]):
+    #         current_family = patch.data[0]['family']
+    # for patch in patches:
+    #     for row in patch.data.iterrows():
+    #         if row['family'] == current_family:
+    #             highlight_wedges(patch, True)
+                
     for patch in patches:
         if patch.contains_point([event.x, event.y]):
             if highlighted_patch is not None and highlighted_patch != patch:
@@ -115,11 +141,11 @@ def on_hover(event):
             tooltip_text = data_info[0]['startDate'].strftime("%Y-%m-%d\n") + "\n".join([f"{row['family']} - {row['model']}" for row in data_info])
             show_tooltip(event, tooltip_text)
             break
-    else:
-        if highlighted_patch is not None:
-            highlight_wedges(highlighted_patch, False)
-        highlighted_patch = None
-        hide_tooltip(event)
+        else:
+            if highlighted_patch is not None:
+                highlight_wedges(highlighted_patch, False)
+            highlighted_patch = None
+            hide_tooltip(event)
     canvas.draw_idle()
 
 # 创建主窗口
