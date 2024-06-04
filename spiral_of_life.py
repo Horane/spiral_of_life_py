@@ -58,7 +58,7 @@ def draw_months_and_seasons(ax, radius_start, radius_end):
 # 定义绘制螺旋线的函数
 def plot_spiral(start_angle):
     radius_start = 0.30
-    radius_end = 2
+    radius_end = 1
     global patches
 
     theta = np.linspace(start_angle, -year_span * 2 * np.pi + start_angle, total_points)
@@ -121,20 +121,16 @@ def plot_spiral(start_angle):
 
 def on_hover(event):
     global highlighted_patch
-    # current_family = ""
-    # for patch in patches:
-    #     if patch.contains_point([event.x, event.y]):
-    #         current_family = patch.data[0]['family']
-    # for patch in patches:
-    #     for row in patch.data.iterrows():
-    #         if row['family'] == current_family:
-    #             highlight_wedges(patch, True)
-                
+
     for patch in patches:
         if patch.contains_point([event.x, event.y]):
             if highlighted_patch is not None and highlighted_patch != patch:
-                highlight_wedges(highlighted_patch, False)
-            highlight_wedges(patch, True)
+                for p in patches:
+                    if p.data[0]['family'] == highlighted_patch.data[0]['family']:
+                        highlight_wedges(p, False)
+            for p in patches:
+                if p.data[0]['family'] == patch.data[0]['family']:
+                    highlight_wedges(p, True)
             highlighted_patch = patch
             # 从 patch 对象中获取存储的数据
             data_info = highlighted_patch.data
@@ -143,7 +139,9 @@ def on_hover(event):
             break
         else:
             if highlighted_patch is not None:
-                highlight_wedges(highlighted_patch, False)
+                for p in patches:
+                    if p.data[0]['family'] == highlighted_patch.data[0]['family']:
+                        highlight_wedges(p, False)
             highlighted_patch = None
             hide_tooltip(event)
     canvas.draw_idle()
@@ -167,7 +165,7 @@ def show_tooltip(event, text):
 def hide_tooltip(event):
     tooltip.withdraw()
 
-fig, ax = plt.subplots(figsize=(36, 27))
+fig, ax = plt.subplots(figsize=(20, 20))
 canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.get_tk_widget().pack()
 
