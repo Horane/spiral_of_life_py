@@ -25,7 +25,7 @@ highlighted_patch = None
 
 # 自定义函数绘制带多种颜色的点
 def draw_multicolor_circle(ax, x, y, colors, radius=0.03, data=None):
-    radius = 0.01 + 0.005 * len(colors)
+    radius = 0.02 + 0.005 * len(colors)
     wedges = [Wedge((x, y), radius, 360 * i / len(colors), 360 * (i + 1) / len(colors), facecolor=color) for i, color in enumerate(colors)]
     for wedge in wedges:
         ax.add_patch(wedge)
@@ -34,8 +34,8 @@ def draw_multicolor_circle(ax, x, y, colors, radius=0.03, data=None):
 
 def highlight_wedges(patch, hover):
     if hover:
-        patch.set_edgecolor('red')
-        patch.set_linewidth(1)
+        patch.set_edgecolor('black')
+        patch.set_linewidth(5)
     else:
         patch.set_edgecolor('white')
         patch.set_linewidth(1)
@@ -165,7 +165,7 @@ def show_tooltip(event, text):
 def hide_tooltip(event):
     tooltip.withdraw()
 
-fig, ax = plt.subplots(figsize=(20, 20))
+fig, ax = plt.subplots(figsize=(28, 24))
 canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.get_tk_widget().pack()
 
